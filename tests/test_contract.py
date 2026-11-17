@@ -1,9 +1,11 @@
 """Guard rails on the ingest contract and the trained model's behaviour."""
+import hashlib
+
 import pandas as pd
 import pytest
 from sklearn.metrics import r2_score
 
-from src.config import CLASSIFIED_COLS, LAG_WARMUP, TARGET
+from src.config import CLASSIFIED_COLS, LAG_WARMUP, RAW, TARGET
 from src.features import build_features, feature_columns, reindex_to_calendar
 from src.ingest import load_raw
 from src.train import MODELS, temporal_split
@@ -64,3 +66,14 @@ def test_every_raw_column_is_classified(raw):
     by a human before the pipeline is trusted. `dteday` is the index."""
     unclassified = set(raw.columns) - {"dteday"} - CLASSIFIED_COLS
     assert not unclassified, f"unclassified raw columns: {sorted(unclassified)}"
+
+
+RAW_SHA256_PREFIX = "a6bed1577f6e4de5"
+
+
+def test_raw_data_is_unmodified():
+    """data/raw/bike_daily.csv is immutable. The permissions deny Edit/Write
+    on it, but a Bash `cp` bypasses them and the PostToolUse hook only matches
+    Edit|Write, so the file's hash is the check that actually catches it."""
+    digest = hashlib.sha256(RAW.read_bytes()).hexdigest()
+    assert digest.startswith(RAW_SHA256_PREFIX), f"data/raw changed: sha256 {digest[:16]}"
