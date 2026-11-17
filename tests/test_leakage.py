@@ -64,3 +64,13 @@ def test_no_missing_values(feats):
 def test_dates_are_sorted_and_unique(feats):
     assert feats.dteday.is_monotonic_increasing
     assert feats.dteday.is_unique
+
+
+def test_cnt_roll_3_on_named_date(feats):
+    """cnt_roll_3 on 2012-06-15 is the mean of 06-12, 06-13, 06-14 only.
+
+    Hand computed from data/raw/bike_daily.csv: (4972 + 7421 + 7363) / 3
+    = 19756 / 3 = 6585.3333. Today's count (06-15) must not be in it.
+    """
+    row = feats.set_index("dteday").loc[pd.Timestamp("2012-06-15")]
+    assert row.cnt_roll_3 == pytest.approx(19756 / 3)
