@@ -1,4 +1,4 @@
-.PHONY: all data features train test clean model check-model
+.PHONY: all data features train exercise4 test clean model check-model
 
 # --- The pipeline ----------------------------------------------------------
 all: data features train
@@ -11,6 +11,9 @@ features:
 
 train:
 	python -m src.train
+
+exercise4:
+	python -m src.exercise4
 
 test:
 	python -m pytest tests/ -q
