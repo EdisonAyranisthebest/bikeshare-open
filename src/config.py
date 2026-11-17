@@ -45,6 +45,15 @@ UNVERIFIED_COLS = {"cnt_2d_bfr"}
 # What feature_columns() and the tests actually enforce.
 FORBIDDEN = LEAKAGE_COLS | TIME_INDEX_COLS | UNVERIFIED_COLS
 
+# 4. Audited and allowed: raw columns known at prediction time, either used
+#    directly or as the source of a calendar/weather feature. A raw column in
+#    none of the four groups (plus `dteday`) fails tests/test_contract.py.
+SAFE_RAW_COLS = {
+    "season", "mnth", "holiday", "weekday", "workday",
+    "temp", "atemp", "hum", "windspeed", "weather",
+}
+CLASSIFIED_COLS = FORBIDDEN | SAFE_RAW_COLS
+
 # Temporal split: train on 2011, validate on H1 2012, test on H2 2012.
 TRAIN_END = "2011-12-31"
 VALID_END = "2012-06-30"

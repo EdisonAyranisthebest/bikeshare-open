@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from sklearn.metrics import r2_score
 
-from src.config import LAG_WARMUP, TARGET
+from src.config import CLASSIFIED_COLS, LAG_WARMUP, TARGET
 from src.features import build_features, feature_columns, reindex_to_calendar
 from src.ingest import load_raw
 from src.train import MODELS, temporal_split
@@ -57,3 +57,10 @@ def test_persistence_baseline_is_reported():
     It must be in the comparison, whatever its score."""
     assert "baseline_persistence" in MODELS
 
+
+
+def test_every_raw_column_is_classified(raw):
+    """A new column in the raw CSV must be put in FORBIDDEN or SAFE_RAW_COLS
+    by a human before the pipeline is trusted. `dteday` is the index."""
+    unclassified = set(raw.columns) - {"dteday"} - CLASSIFIED_COLS
+    assert not unclassified, f"unclassified raw columns: {sorted(unclassified)}"
