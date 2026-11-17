@@ -74,3 +74,11 @@ def test_cnt_roll_3_on_named_date(feats):
     """
     row = feats.set_index("dteday").loc[pd.Timestamp("2012-06-15")]
     assert row.cnt_roll_3 == pytest.approx(19756 / 3)
+
+
+def test_encode_weather_raises_on_unknown_label():
+    """An unseen weather label must raise, not silently become NaN."""
+    from src.features import encode_weather
+
+    with pytest.raises(ValueError, match="unmapped weather labels"):
+        encode_weather(pd.Series(["GOOD", "STORMY"]))

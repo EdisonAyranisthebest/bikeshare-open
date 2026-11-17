@@ -57,10 +57,3 @@ def test_persistence_baseline_is_reported():
     It must be in the comparison, whatever its score."""
     assert "baseline_persistence" in MODELS
 
-
-def test_encode_weather_raises_on_unknown_label():
-    """An unseen weather label must raise, not silently become NaN."""
-    from src.features import encode_weather
-
-    with pytest.raises(ValueError, match="unmapped weather labels"):
-        encode_weather(pd.Series(["GOOD", "STORMY"]))
