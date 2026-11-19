@@ -311,3 +311,7 @@ FAILED tests/test_contract.py::test_raw_data_is_unmodified - AssertionError: ...
 ```
 
 Remaining gap: the check only runs when someone runs `make test`. A `Stop` hook that runs `make test` and exits 2 on failure would make it run before the agent can finish. Not implemented.
+
+## Agent run: `/seed-fault no-shift` (2026-11-18)
+
+Model: `bikeshare-coder` (qwen3.5:9b via local Ollama, 64k context), Claude Code 2.1.327. I ran `/seed-fault no-shift` in a live session. The agent checked `git status`, removed `.shift(1)` from the `cnt_roll_7` line in `src/features.py`, and the PostToolUse hook fired inside the session and reported `test_rolling_mean_excludes_today` failing (obtained 4389.0, expected 4414.857...). The agent named the test and printed the hook stderr, as the skill asks. I interrupted the run before its revert step, so a full red-to-green turn count was not measured. I restored the file with `git checkout -- src/features.py`; `make test` then gave 18 passed.
