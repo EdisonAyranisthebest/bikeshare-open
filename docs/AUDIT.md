@@ -3,18 +3,43 @@
 Audited repo: https://github.com/Azi23333/bikeshare-open
 Commit audited: 9d07ad0
 Date: 2026-11-24
-Auditor model: bikeshare-coder (qwen3.5:9b, local Ollama, 64k context), Claude Code 2.1.327 and Agent SDK
+Auditor model: bikeshare-coder (qwen3.5:9b, local Ollama, 64k context), Claude Code 2.1.327
 
-## Why this is not `/leakage-auditor` output
+## `/leakage-auditor` output (as printed by Claude Code)
 
-I tried the `/leakage-auditor` subagent in Claude Code on this repo. Asking "Use the leakage-auditor subagent" made the model's tool call fail with "Invalid tool parameters", and the retry was interrupted. `@agent-leakage-auditor review the diff from 67dd845 to HEAD` then stalled on "Waiting for API response", even after I raised the WSL memory limit from 9 GB to 12 GB. I got no report from the subagent. I then ran the repo's batch auditor, `agent/audit.py`, which reports on leakage, the temporal split, baselines and reproducibility. Its output is below, verbatim.
+My first attempts failed: "Use the leakage-auditor subagent" ended in "Invalid tool parameters", and a retry stalled on "Waiting for API response". Calling it as `@agent-leakage-auditor review the diff from 67dd845 to HEAD in this repo` worked. The subagent ran as a background agent on the local model and finished after 6 h 13 m. The text below is the final report Claude Code printed afterwards, pasted verbatim. I did not accept its offer to apply a fix.
 
-## `agent/audit.py` output (verbatim)
+```
+Leakage Audit Results ✓
+
+The subagent reviewed the diff from 67dd845 to HEAD and found one critical issue:
+
+❌ Target Leakage Violation (src/features.py)
+
+The build_features() function does not filter out forbidden columns before returning the feature dataframe. This means the parquet file at data/processed/features.parquet contains:
+- casual, registered, cnt, instant, yr, days_since_2011, cnt_2d_bfr
+
+These should never be in the feature set per CLAUDE.md: "Never put casual or registered in a feature set: casual + registered == cnt exactly."
+
+Fix needed: Add filtering to drop forbidden columns before returning.
+
+✅ Other Checks Pass
+
+- Temporal split (train=2011, valid=H1 2012, test=H2 2012) ✓
+- Calendar gap handling with lag/rolling features ✓
+- Baseline reporting (mean + persistence) in metrics.json ✓
+
+Would you like me to apply this fix now?
+```
+
+## Second auditor: `agent/audit.py` (Agent SDK, same local model)
 
 ```
 {"repo": "/home/ediso/audited-repo", "leakage": "none", "temporal_ok": true, "baseline_reported": true, "reproducible": true, "findings": [], "confidence": "high"}
 ```
 
+The two auditors disagree: this one reports no leakage and no findings.
+
 ## Verdict
 
-The auditor reported no leakage and no findings, so no finding changes a number. I agree with that, and I checked it myself rather than relying on the model. The raw CSV in the audited repo has the expected sha256 prefix (a6bed1577f6e4de5). `make all` and `make test` run clean (15 tests pass at the audited commit). The new feature, `cnt_roll_range_7`, is built from `shift(1)` before the rolling max and min, so it uses only the seven days before the forecast date, and its hand-computed value on 2011-03-18 (2744 minus 1977 = 767) matches the feature table (767.0). The excluded columns (`casual`, `registered`, time indexes) stay excluded through the shared config. One caveat: a clean report from a 9b model is weak evidence, and it cannot see anything it was not pointed at, so I treat it as a complement to the tests. The classmate's own DECISIONS.md shows the feature helped ridge on validation and hurt HGB, which is a modelling result, not a leakage issue.
+I reject the one critical finding, and I agree with the other three checks (temporal split, calendar gap handling, baselines reported). The finding says `build_features()` leaves `casual`, `registered`, `cnt` and the other forbidden columns in `features.parquet`. That is true but it is not leakage. The parquet is the full feature table on purpose, and the model never reads it directly: `src/train.py` builds its inputs with `feature_columns()`, which drops everything in `FORBIDDEN`. I printed the table and the model inputs in the audited repo at 9d07ad0. All seven forbidden columns are in the table, and none is in the model inputs (temp, atemp, hum, windspeed, dayofweek, is_weekend, is_holiday, is_workday, month_sin, month_cos, weather_severity, cnt_lag_1, cnt_lag_7, cnt_roll_7, cnt_roll_range_7), and `test_no_forbidden_features` guards that gate and passes (15 tests). So the finding changes no reported number, and applying its suggested fix would have removed columns the pipeline needs. I also checked that the raw CSV hash matches (a6bed1577f6e4de5) and that the new feature `cnt_roll_range_7` shifts by one day before the rolling max and min (hand-computed value 2744 minus 1977 = 767 on 2011-03-18, matching the table). The disagreement between the two auditors, and the six hours the subagent needed on a 9b local model, are a reminder that a small model's report is evidence to verify, not a verdict.

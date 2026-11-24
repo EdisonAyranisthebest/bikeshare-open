@@ -21,3 +21,4 @@ Agents append here via the `/new-feature` skill; you append here by hand.
 - 2026-11-18: Remove the `audit.jsonl` pattern from .gitignore so reports/audit.jsonl is tracked, as the submission requires (.gitignore).
 - 2026-11-24: Audited a classmate repo (Azi23333/bikeshare-open) with agent/audit.py after the /leakage-auditor subagent failed on the local 9b model; no findings, verdict in docs/AUDIT.md.
 - 2026-11-24: Rewrote REPORT.md Attribution to name both models, the cloud-model attempt that failed (HTTP 402), and what was and was not measured (REPORT.md).
+- 2026-11-24: /leakage-auditor subagent finally ran (via @agent-leakage-auditor, 6 h 13 m, local 9b). Its one critical finding (forbidden columns in features.parquet) is a false positive, because train.py uses feature_columns(); I rejected it, kept the fix unapplied, and rewrote docs/AUDIT.md and the Attribution note (docs/AUDIT.md, REPORT.md).
