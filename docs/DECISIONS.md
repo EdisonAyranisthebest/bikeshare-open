@@ -20,3 +20,4 @@ Agents append here via the `/new-feature` skill; you append here by hand.
 - 2026-11-18: Ran `python agent/audit.py . --out reports/audit.jsonl` on this repo with bikeshare-coder (qwen3.5:9b, local). It reported leakage none, temporal_ok, baseline_reported and reproducible all true, and no findings, so nothing to fix. A clean report from a 9b model is weak evidence, so it complements the tests rather than replacing them (reports/audit.jsonl).
 - 2026-11-18: Remove the `audit.jsonl` pattern from .gitignore so reports/audit.jsonl is tracked, as the submission requires (.gitignore).
 - 2026-11-24: Audited a classmate repo (Azi23333/bikeshare-open) with agent/audit.py after the /leakage-auditor subagent failed on the local 9b model; no findings, verdict in docs/AUDIT.md.
+- 2026-11-24: Rewrote REPORT.md Attribution to name both models, the cloud-model attempt that failed (HTTP 402), and what was and was not measured (REPORT.md).
